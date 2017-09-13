@@ -10,7 +10,7 @@ db = SQLAlchemy(app)
 
 class students(db.Model):
     """
-    Class contains the db structure
+    Class contains the db structure  of database and functions for saving the student data.
     """
     id = db.Column('student_id', db.Integer, primary_key=True)
     name = db.Column(db.String(100))
@@ -35,7 +35,7 @@ class students(db.Model):
 @app.route('/')
 def show_all():
     """
-    shows the students on the page
+    Shows the students on the page.
     :return: page shows the students add to DB.
     """
     return render_template('show_all.html', students=students.query.all())
