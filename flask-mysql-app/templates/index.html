@@ -1,18 +1,26 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
+    <head>
+        <meta charset="UTF-8">
+        <title>Title</title>
+    </head>
 <body>
-<h3>Welcome to Flask Mysql Application</h3>
-<input type="submit" value="View All Users"  onclick="location.href='AllUsers'" >
-<br>
-<br>
-<input type="submit" value="Add New User" onclick="location.href='new_user'">
-<br>
-<br>
-<input type="submit" value="Authenticate user" onclick="location.href='check_user'">
+    {%- for category, message in get_flashed_messages(with_categories = true) %}
+    <div class="alert alert-danger">
+        {{ message }}
+    </div>
+    {%- endfor %}
+    <h3>Welcome to Flask Mysql Application</h3>
+    <input type="submit" value="View All Users" onclick="location.href='AllUsers'">
+    <br>
+    <br>
+    <input type="submit" value="Add New User" onclick="location.href='new_user'">
+    <br>
+    <br>
+    <input type="submit" value="Authenticate user" onclick="location.href='check_user'">
+    <br>
+    <br>
+    <input type="submit" value="Remove User" onclick="location.href='user_remove'">
 
 </body>
 </html>
