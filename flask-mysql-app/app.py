@@ -1,6 +1,15 @@
+"""
+Flask Mysql Application:
+File contains code related to the user by using the flask framework connected with mysql db.
+It also includes functions to add, view, delete and authenticate the user presence in database.
+Database connectivity is also handled in the same file.
+"""
+
 from flask import Flask, request, render_template, flash
 from flaskext.mysql import MySQL
 
+
+# Database connectivity
 
 mysql = MySQL()
 app = Flask(__name__)
@@ -15,8 +24,8 @@ mysql.init_app(app)
 @app.route("/")
 def hello():
     """
-    Just shows message on the web page
-    :return:
+    Renders the main page of application
+    :return: web_page
     """
     return render_template('index.html')
 
@@ -24,8 +33,9 @@ def hello():
 @app.route("/check_user")
 def check_user():
     """
-    Just shows message on the web page
-    :return:
+    Renders the page which takes the username and password of user and authenticates that
+    username and password matches to the database. and responds accordingly.
+    :return: web_page
     """
     return render_template('authenticate_user.html')
 
@@ -33,8 +43,9 @@ def check_user():
 @app.route("/user_remove")
 def user_remove():
     """
-    Just shows message on the web page
-    :return:
+    Renders the page which takes username as input and if username is available in the database
+    then deletes that user.
+    :return: web_page
     """
     return render_template('remove.html')
 
@@ -42,9 +53,9 @@ def user_remove():
 @app.route("/Authenticate", methods=['GET', 'POST'])
 def authenticate():
     """
-    Authenticates the user and validates that the password and the user name is valid
+    Authenticates the user and validates that the password and the username is valid
     as saved in the DB and shows the response accordingly.
-    :return:
+    :return message
     """
     username = request.form['username']
     password = request.form['password']
@@ -60,9 +71,9 @@ def authenticate():
 @app.route("/remove", methods=['GET', 'POST'])
 def remove():
     """
-    Authenticates the user and validates that the password and the user name is valid
-    as saved in the DB and shows the response accordingly.
-    :return:
+    Authenticates the username in the database and if username is available in db then
+    deletes that user from database.
+    :return: web_page
     """
     username = request.form['username']
     conn = mysql.get_db()
@@ -80,8 +91,8 @@ def remove():
 @app.route('/new_user')
 def add_user():
     """
-    Just returns the page to add new user
-    :return:
+    Renders the page which takes information from the user and adds new user to database.
+    :return: web_page
     """
     return render_template('new.html')
 
@@ -91,7 +102,7 @@ def new():
     """
     Method to add the new student in the DB.
     Fetches data from the form and then enters it in to DB  after connecting with DB.
-    :return: page with newly added student
+    :return: message or index page
     """
     if request.method == 'POST':
         if not request.form['username'] or not request.form['password']:
@@ -114,9 +125,8 @@ def new():
 @app.route("/AllUsers")
 def all_users():
     """
-    Authenticates the user and validates that the password and the user name is valid
-    as saved in the DB and shows the response accordingly.
-    :return:
+    Gets all the user from the database and then display them on web page.
+    :return: web_page having all the users in the DB.
     """
     cursor = mysql.connect().cursor()
     cursor.execute("SELECT * from User")
