@@ -106,7 +106,7 @@ def new():
     """
     if request.method == 'POST':
         if not request.form['username'] or not request.form['password']:
-            flash('Please enter all the fields', 'error')
+            return "Some fields are missing"
         else:
             username = request.form['username']
             password = request.form['password']
