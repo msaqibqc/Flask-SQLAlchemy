@@ -3,6 +3,7 @@ Flask Mysql Application:
 File contains code related to the user by using the flask framework connected with mysql db.
 It also includes functions to add, view, delete and authenticate the user presence in database.
 Database connectivity is also handled in the same file.
+Authenticates the user using the sessions provided by flask service
 """
 
 from flask import Flask, request, render_template, flash, session
@@ -46,8 +47,8 @@ def index():
 @app.route("/logout")
 def logout():
     """
-
-    :return:
+    Logout the user from website
+    :return: web_page
     """
     session['logged_in'] = False
     return hello()
@@ -107,16 +108,19 @@ def remove():
     if not session.get('logged_in'):
         return render_template('login.html')
     username = request.form['username']
-    conn = mysql.get_db()
-    cursor = conn.cursor()
-    cursor.execute("SELECT * from User where userName='" + username + "'")
-    data = cursor.fetchone()
-    if data is None:
-        return "User is not available in the database"
-    else:
-        cursor.execute("Delete from User Where userName = '" + username + "'")
-        conn.commit()
-        return "User removed successfully"
+    username = username.strip()
+    if username:
+        conn = mysql.get_db()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * from User where userName='" + username + "'")
+        data = cursor.fetchone()
+        if data is None:
+            return "User is not available in the database"
+        else:
+            cursor.execute("Delete from User Where userName = '" + username + "'")
+            conn.commit()
+            return "User removed successfully"
+    return "Only spaces are entered"
 
 
 @app.route('/new_user')
@@ -174,6 +178,11 @@ def all_users():
 
 @app.route('/login', methods=['POST'])
 def login():
+    """
+    Gets the credentials from the user and authenticates that the user is available in the DB.
+    And on availability of user in DB, logins the user.
+    :return: web_page(Login or index page)
+    """
     username = request.form['username']
     password = request.form['password']
     cursor = mysql.connect().cursor()
