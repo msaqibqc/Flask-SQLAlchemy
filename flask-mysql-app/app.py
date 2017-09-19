@@ -8,12 +8,14 @@ Authenticates the user using the sessions provided by flask service
 
 from flask import Flask, request, render_template, flash, session
 from flaskext.mysql import MySQL
+from flask_restful import Api, Resource
 
 
 # Database connectivity
 
 mysql = MySQL()
 app = Flask(__name__)
+api = Api(app)
 app.config['MYSQL_DATABASE_USER'] = 'root'
 # app.config['MYSQL_DATABASE_PASSWORD'] = 'root'
 app.config['MYSQL_DATABASE_DB'] = 'EmpData'
@@ -22,7 +24,15 @@ app.config['SECRET_KEY'] = "random string"
 mysql.init_app(app)
 
 
-@app.route("/")
+class HelloWorld(Resource):
+    def get(self):
+        return {'hello': 'world'}
+
+
+api.add_resource(HelloWorld, '/')
+
+
+@app.route("/123")
 def hello():
     """
     Renders the main page of application
@@ -197,5 +207,8 @@ def login():
     return hello()
 
 
-if __name__ == "__main__":
-    app.run()
+# if __name__ == "__main__":
+#     app.run()
+
+if __name__ == '__main__':
+    app.run(debug=True)
