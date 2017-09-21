@@ -5,17 +5,17 @@ It also includes functions to add, view, delete and authenticate the user presen
 Database connectivity is also handled in the same file.
 Authenticates the user using the sessions provided by flask service
 """
+from flask import Flask, request, render_template, flash, session, abort, make_response, jsonify, url_for
+from flask_httpauth import HTTPBasicAuth
 
-from flask import Flask, request, render_template, flash, session
+from flask_jwt import JWT, current_identity, jwt_required
+from flask_jwt_extended import create_access_token, create_refresh_token, JWTManager
+
 from flaskext.mysql import MySQL
-from flask_restful import Api, Resource
-
 
 # Database connectivity
-
 mysql = MySQL()
 app = Flask(__name__)
-api = Api(app)
 app.config['MYSQL_DATABASE_USER'] = 'root'
 # app.config['MYSQL_DATABASE_PASSWORD'] = 'root'
 app.config['MYSQL_DATABASE_DB'] = 'EmpData'
@@ -24,15 +24,36 @@ app.config['SECRET_KEY'] = "random string"
 mysql.init_app(app)
 
 
-class HelloWorld(Resource):
-    def get(self):
-        return {'hello': 'world'}
+jwt = JWTManager(app)
+
+class User(object):
+    def __init__(self, id):
+        self.id = id
+
+    def __str__(self):
+        return "User(id='%s')" % self.id
+
+#
+# def verify(username, password):
+#     if not (username and password):
+#         return False
+#     # username = request.form['username']
+#     # password = request.form['password']
+#     cursor = mysql.connect().cursor()
+#     cursor.execute("SELECT * from User where Username='" + username + "' and Password='" + password + "'")
+#     data = cursor.fetchone()
+#     if data:
+#         return User(id=data[0])
+
+# jwt = JWT(app, verify, identity)
+
+# @app.route("/protected")
+# @jwt_required()
+# def protected():
+#     return '%s' % current_identity
 
 
-api.add_resource(HelloWorld, '/')
-
-
-@app.route("/123")
+@app.route("/")
 def hello():
     """
     Renders the main page of application
@@ -133,6 +154,12 @@ def remove():
     return "Only spaces are entered"
 
 
+@app.route('/saqib', methods=['GET'])
+@jwt_required()
+def auth():
+    return "Only spaces are entered"
+
+
 @app.route('/new_user')
 def add_user():
     """
@@ -201,14 +228,15 @@ def login():
     if data is not None:
         flash('User logged in Successfully', 'error')
         session['logged_in'] = True
+        ret = {'access_token': create_access_token(identity=username)}
+
+        # return jsonify(ret), 200
         return render_template('index.html')
     else:
         flash('Credentials are not correct!')
     return hello()
 
 
-# if __name__ == "__main__":
-#     app.run()
+if __name__ == "__main__":
+    app.run()
 
-if __name__ == '__main__':
-    app.run(debug=True)
