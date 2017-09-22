@@ -5,14 +5,12 @@ It also includes functions to add, view, delete and authenticate the user presen
 Database connectivity is also handled in the same file.
 Authenticates the user using the sessions provided by flask service
 """
-from flask import Flask, request, render_template, flash, session, abort, make_response, jsonify, url_for
-from flask_httpauth import HTTPBasicAuth
-import requests
-from flask_jwt import JWT, current_identity
+from flask import Flask, request, render_template, flash, session, jsonify
 from flask_jwt_extended import create_access_token, create_refresh_token, JWTManager, \
     get_jwt_identity, jwt_required, get_raw_jwt
-import json
 from flaskext.mysql import MySQL
+
+
 
 # Database connectivity
 mysql = MySQL()
@@ -43,36 +41,6 @@ class User(object):
     def __str__(self):
         return "User(id='%s')" % self.id
 
-#
-# def verify(username, password):
-#     if not (username and password):
-#         return False
-#     # username = request.form['username']
-#     # password = request.form['password']
-#     cursor = mysql.connect().cursor()
-#     cursor.execute("SELECT * from User where Username='" + username + "' and Password='" + password + "'")
-#     data = cursor.fetchone()
-#     if data:
-#         return User(id=data[0])
-
-# jwt = JWT(app, verify, identity)
-
-# @app.route("/protected")
-# @jwt_required()
-# def protected():
-#     return '%s' % current_identity
-
-
-@app.route("/")
-def hello():
-    """
-    Renders the main page of application
-    :return: web_page
-    """
-    if not session.get('logged_in'):
-        return render_template('login.html')
-    return render_template('index.html')
-
 
 @app.route("/index", methods=['POST', 'GET'])
 @jwt_required
@@ -81,33 +49,21 @@ def index():
     Renders the main page of application
     :return: web_page
     """
-    # if not session.get('logged_in'):
-    #     return render_template('login.html')
     current_user = get_jwt_identity()
     return jsonify({'hello_from': current_user}), 200
-    # return render_template('index.html')
+
 
 
 @app.route('/expire', methods=['DELETE'])
 @jwt_required
 def expire():
     """
-
+    Expires the token
     :return:
     """
     jti = get_raw_jwt()['jti']
     blacklist.add(jti)
     return jsonify({"msg": "Successfully logged out"}), 200
-
-
-@app.route("/logout")
-def logout():
-    """
-    Logout the user from website
-    :return: web_page
-    """
-    session['logged_in'] = False
-    return hello()
 
 
 @app.route("/check_user")
@@ -120,18 +76,6 @@ def check_user():
     if not session.get('logged_in'):
         return render_template('login.html')
     return render_template('authenticate_user.html')
-
-
-@app.route("/user_remove")
-def user_remove():
-    """
-    Renders the page which takes username as input and if username is available in the database
-    then deletes that user.
-    :return: web_page
-    """
-    if not session.get('logged_in'):
-        return render_template('login.html')
-    return render_template('remove.html')
 
 
 @app.route("/Authenticate", methods=['GET', 'POST'])
@@ -154,7 +98,8 @@ def authenticate():
         return "User is available in database"
 
 
-@app.route("/remove", methods=['GET', 'POST'])
+@app.route("/remove", methods=['GET', 'POST', 'DELETE'])
+@jwt_required
 def remove():
     """
     Authenticates the username in the database and if username is available in db then
@@ -171,29 +116,12 @@ def remove():
         cursor.execute("SELECT * from User where userName='" + username + "'")
         data = cursor.fetchone()
         if data is None:
-            return "User is not available in the database"
+            return jsonify({'message: ': "User is not available in database"}), 200
         else:
             cursor.execute("Delete from User Where userName = '" + username + "'")
             conn.commit()
-            return "User removed successfully"
-    return "Only spaces are entered"
-
-
-@app.route('/saqib', methods=['GET'])
-@jwt_required
-def auth():
-    return "Only spaces are entered"
-
-
-@app.route('/new_user')
-def add_user():
-    """
-    Renders the page which takes information from the user and adds new user to database.
-    :return: web_page
-    """
-    if not session.get('logged_in'):
-        return render_template('login.html')
-    return render_template('new.html')
+            return jsonify({'message: ': "User removed successfully"}), 200
+    return jsonify({'message: ': "Only spaces are entered"}), 200
 
 
 @app.route('/new', methods=['GET', 'POST'])
@@ -208,7 +136,7 @@ def new():
     #     return render_template('login.html')
     if request.method == 'POST':
         if not request.form['username'] or not request.form['password']:
-            return "Some fields are missing"
+            return jsonify({'message: ': "Some fields are missing"}), 200
         else:
             username = request.form['username']
             password = request.form['password']
@@ -219,9 +147,8 @@ def new():
             id = data[-1][0] + 1
             cursor.execute("Insert into User values (" + str(id) + ",'" + username + "','" + password + "','NULL')")
             conn.commit()
-            # flash('User Added Successfully', 'error')
-            return jsonify({'id:': id })
-    return jsonify({'message: ':"No User Added" })
+            return jsonify({'id:': id})
+    return jsonify({'message: ': "No User Added"}), 200
 
 
 @app.route("/AllUsers")
@@ -235,23 +162,14 @@ def all_users():
         return render_template('login.html')
     cursor = mysql.connect().cursor()
     cursor.execute("SELECT * from User")
-    # row_headers = [x[0] for x in cursor.description]
     data = cursor.fetchall()
-    # json_data = []
-    # for result in data:
-    #     json_data.append(dict(zip(row_headers, result)))
-    # return json.dumps(json_data)
     payload = []
     content = {}
     for result in data:
-        content = {'id': result[0], 'username': result[1], 'password': result[2] }
+        content = {'id': result[0], 'username': result[1], 'password': result[2]}
         payload.append(content)
         content = {}
     return jsonify(payload)
-    # data = json.dumps(data)
-    # json.dumps([dict(ix) for ix in data])
-    # data = dict(data)
-    # return data
 
 
 @app.route('/login', methods=['POST'])
@@ -277,9 +195,8 @@ def login():
         return jsonify({'access_token': access_token, 'login': 'successful'}), 201
     else:
         flash('Credentials are not correct!')
-    return jsonify({'message':'Credentials are not correct'}), 200
+    return jsonify({'message': 'Credentials are not correct'}), 200
 
 
 if __name__ == "__main__":
     app.run()
-
