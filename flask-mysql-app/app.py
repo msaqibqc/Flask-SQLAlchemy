@@ -10,9 +10,8 @@ from flask_jwt_extended import create_access_token, create_refresh_token, JWTMan
     get_jwt_identity, jwt_required, get_raw_jwt
 from flaskext.mysql import MySQL
 
-
-
 # Database connectivity
+
 mysql = MySQL()
 app = Flask(__name__)
 app.config['MYSQL_DATABASE_USER'] = 'root'
