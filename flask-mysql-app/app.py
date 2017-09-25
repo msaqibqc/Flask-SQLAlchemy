@@ -1,9 +1,9 @@
 """
-Flask Mysql Application:
+Flask authentication application:
 File contains code related to the user by using the flask framework connected with mysql db.
 It also includes functions to add, view, delete and authenticate the user presence in database.
 Database connectivity is also handled in the same file.
-Authenticates the user using the sessions provided by flask service
+Authenticates the user using the base of extended_jwt library
 """
 from flask import Flask, request, render_template, flash, session, jsonify
 from flask_jwt_extended import create_access_token, create_refresh_token, JWTManager, \
@@ -37,7 +37,7 @@ def check_if_token_in_blacklist(decrypted_token):
 @jwt_required
 def index():
     """
-    Renders the main page of application
+    Welcomes the user on providing correct authorization token
     :return: web_page
     """
     current_user = get_jwt_identity()
@@ -75,10 +75,12 @@ def remove():
         cursor.execute("SELECT * from User where userName='" + username + "'")
         data = cursor.fetchone()
         if data is None:
+            cursor.close()
             return jsonify({'message: ': "User is not available in database"}), 200
         else:
             cursor.execute("Delete from User Where userName = '" + username + "'")
             conn.commit()
+            cursor.close()
             return jsonify({'message: ': "User removed successfully"}), 200
     return jsonify({'message: ': "Only spaces are entered"}), 200
 
@@ -106,6 +108,7 @@ def new():
             id = data[-1][0] + 1
             cursor.execute("Insert into User values (" + str(id) + ",'" + username + "','" + password + "','NULL')")
             conn.commit()
+            cursor.close()
             return jsonify({'id:': id})
     return jsonify({'message: ': "No User Added"}), 200
 
@@ -128,6 +131,8 @@ def all_users():
         content = {'id': result[0], 'username': result[1], 'password': result[2]}
         payload.append(content)
         content = {}
+
+    cursor.close()
     return jsonify(payload)
 
 
@@ -151,6 +156,7 @@ def login():
         cursor = conn.cursor()
         cursor.execute("UPDATE User SET token = '" + str(access_token) + "' WHERE userId = " + str(data[0]) + ";")
         conn.commit()
+        cursor.close()
         return jsonify({'access_token': access_token, 'login': 'successful'}), 201
     else:
         flash('Credentials are not correct!')
