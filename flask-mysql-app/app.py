@@ -33,14 +33,6 @@ def check_if_token_in_blacklist(decrypted_token):
     return jti in blacklist
 
 
-class User(object):
-    def __init__(self, id):
-        self.id = id
-
-    def __str__(self):
-        return "User(id='%s')" % self.id
-
-
 @app.route("/index", methods=['POST', 'GET'])
 @jwt_required
 def index():
@@ -63,38 +55,6 @@ def expire():
     jti = get_raw_jwt()['jti']
     blacklist.add(jti)
     return jsonify({"msg": "Successfully logged out"}), 200
-
-
-@app.route("/check_user")
-def check_user():
-    """
-    Renders the page which takes the username and password of user and authenticates that
-    username and password matches to the database. and responds accordingly.
-    :return: web_page
-    """
-    if not session.get('logged_in'):
-        return render_template('login.html')
-    return render_template('authenticate_user.html')
-
-
-@app.route("/Authenticate", methods=['GET', 'POST'])
-def authenticate():
-    """
-    Authenticates the user and validates that the password and the username is valid
-    as saved in the DB and shows the response accordingly.
-    :return message
-    """
-    if not session.get('logged_in'):
-        return render_template('login.html')
-    username = request.form['username']
-    password = request.form['password']
-    cursor = mysql.connect().cursor()
-    cursor.execute("SELECT * from User where Username='" + username + "' and Password='" + password + "'")
-    data = cursor.fetchone()
-    if data is None:
-        return "User is not available in the database"
-    else:
-        return "User is available in database"
 
 
 @app.route("/remove", methods=['GET', 'POST', 'DELETE'])
