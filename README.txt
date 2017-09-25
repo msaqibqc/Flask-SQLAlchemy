@@ -1,4 +1,46 @@
-# Flask-SQLAlchemy
+# Flask-Authentication API 
+
+
+To start the project:
+
+Clone the Project:
+
+1. cd Flask-SQLAlchemy/
+
+2. Open terminal
+
+Type following commands:
+	mysql -uroot 
+
+3. Run the following MySql commands
+
+	- mysql> CREATE DATABASE EmpData;
+
+	- mysql> CREATE TABLE User(
+ 		userId INT NOT NULL AUTO_INCREMENT,
+ 		userName VARCHAR(100) NOT NULL,
+ 		password VARCHAR(40) NOT NULL,
+		token VARCHAR(300) NOT NULL,
+ 		PRIMARY KEY(userId)
+ 		);
+
+4. Selecting the database
+	- Use EmpData;
+
+
+5. Inserting row into the database
+	- Insert into User values(1,’saqib’,’123’,’121212’);
+
+
+6. Checking the data base table values
+	- Select * from the User
+	
+	- This should show the tables with one row created.
+
+	
+Now rung the application, Run the file app.py
+	- The server will start at http://127.0.0.1:5000
+
 
 API Documentation
 
