@@ -22,15 +22,18 @@ app.config['SECRET_KEY'] = "random string"
 app.config['JWT_BLACKLIST_ENABLED'] = True
 app.config['JWT_BLACKLIST_TOKEN_CHECKS'] = ['access', 'refresh']
 
-blacklist = set()
+token_list = set()
 mysql.init_app(app)
 jwt = JWTManager(app)
 
 
 @jwt.token_in_blacklist_loader
 def check_if_token_in_blacklist(decrypted_token):
+    if not session.get('logged_in'):
+        return jsonify({"Message": "Session expired"}), 400
+
     jti = decrypted_token['jti']
-    return jti in blacklist
+    return jti in token_list
 
 
 @app.route("/index", methods=['POST', 'GET'])
@@ -44,7 +47,6 @@ def index():
     return jsonify({'hello_from': current_user}), 200
 
 
-
 @app.route('/expire', methods=['DELETE'])
 @jwt_required
 def expire():
@@ -52,8 +54,8 @@ def expire():
     Expires the token
     :return:
     """
-    jti = get_raw_jwt()['jti']
-    blacklist.add(jti)
+    # jti = get_raw_jwt()['jti']
+    session['logged_in'] = False
     return jsonify({"msg": "Successfully logged out"}), 200
 
 
@@ -106,7 +108,9 @@ def new():
             cursor.execute("SELECT * from User")
             data = cursor.fetchall()
             id = data[-1][0] + 1
-            cursor.execute("Insert into User values (" + str(id) + ",'" + username + "','" + password + "','NULL')")
+            query = "Insert into User values ( {id}, {username}, {password}, {token} )"
+            query = query.format(id=str(id), username="'" + username + "'", password="'" + password + "'", token='0')
+            cursor.execute(query)
             conn.commit()
             cursor.close()
             return jsonify({'id:': id})
@@ -126,12 +130,9 @@ def all_users():
     cursor.execute("SELECT * from User")
     data = cursor.fetchall()
     payload = []
-    content = {}
     for result in data:
         content = {'id': result[0], 'username': result[1], 'password': result[2]}
         payload.append(content)
-        content = {}
-
     cursor.close()
     return jsonify(payload)
 
@@ -146,19 +147,23 @@ def login():
     username = request.form['username']
     password = request.form['password']
     cursor = mysql.connect().cursor()
-    cursor.execute("SELECT * from User where Username='" + username + "' and Password='" + password + "'")
+    query = "SELECT * from User where Username={username} and Password={password}"
+    query = query.format(username="'" + username + "'", password="'" + password + "'")
+    cursor.execute(query=query)
     data = cursor.fetchone()
     if data is not None:
         flash('User logged in Successfully', 'error')
         session['logged_in'] = True
-        access_token = create_access_token(identity=username)
+        access_token = create_access_token(identity=data[0])
         conn = mysql.get_db()
         cursor = conn.cursor()
-        cursor.execute("UPDATE User SET token = '" + str(access_token) + "' WHERE userId = " + str(data[0]) + ";")
+        cursor.execute("UPDATE User SET token = '%s" % str(access_token) + "', user_session =%s" % 1 +
+                       " WHERE userId = %d;" % data[0])
         conn.commit()
         cursor.close()
         return jsonify({'access_token': access_token, 'login': 'successful'}), 201
     else:
+        cursor.close()
         flash('Credentials are not correct!')
     return jsonify({'message': 'Credentials are not correct'}), 200
 
