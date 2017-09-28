@@ -6,21 +6,12 @@ Database connectivity is also handled in the same file.
 Authenticates the user using the base of extended_jwt library
 """
 from flask import Flask, request, flash, jsonify
-from flask_jwt_extended import create_access_token, JWTManager, get_jwt_identity, jwt_required ,\
-    current_user,get_current_user
+from flask_jwt_extended import create_access_token, JWTManager, get_jwt_identity, \
+    jwt_required ,get_raw_jwt, get_jti
 from flaskext.mysql import MySQL
 from flask_mysql_app.users_data.Users import Users
-
+from flask_mysql_app.settings import mysql, app
 import datetime
-
-# Database connectivity
-
-mysql = MySQL()
-app = Flask(__name__)
-app.config['MYSQL_DATABASE_USER'] = 'root'
-app.config['MYSQL_DATABASE_DB'] = 'EmpData'
-app.config['MYSQL_DATABASE_HOST'] = 'localhost'
-app.config['SECRET_KEY'] = "random string"
 
 
 mysql.init_app(app)
@@ -30,16 +21,18 @@ jwt = JWTManager(app)
 @jwt.user_loader_callback_loader
 def user_loader_callback(identity):
     data = get_jwt_identity()
+    data1 = get_raw_jwt()
     conn = mysql.get_db()
     cursor = conn.cursor()
-    user_id = data['id']
-    cursor.execute("SELECT user_session FROM User WHERE userId='%d" % user_id + "'")
+    user_id = data['user']['id']
+    session_id = data['session_id']
+    cursor.execute("SELECT is_active FROM session WHERE userId='%d" % user_id + "' and sessionId='%d" % session_id + "'")
     data = cursor.fetchone()
     if data[0] == 0:
         cursor.close()
-        get_jwt_identity()['session'] = False
+        get_jwt_identity()['user']['session'] = False
 
-    return identity
+    return get_jwt_identity()
 
 
 @app.route("/index", methods=['POST', 'GET'])
@@ -49,13 +42,16 @@ def index():
     Welcomes the user on providing correct authorization token
     :return: web_page
     """
+    data = get_jwt_identity()
+    if not data['session']:
+        return jsonify({"Message": "Session expired"}), 400
     current_user = get_jwt_identity()
     return jsonify({'hello_from': current_user}), 200
 
 
-@app.route('/expire', methods=['DELETE'])
+@app.route('/logout', methods=['DELETE'])
 @jwt_required
-def expire():
+def logout():
     """
     Expires the token
     :return:
@@ -97,13 +93,13 @@ def remove():
         data = cursor.fetchone()
         if data is None:
             cursor.close()
-            return jsonify({'message: ': "User is not available in database with this id"}), 200
+            return jsonify({'message: ': "User is not available in database with this id"}), 400
         else:
             cursor.execute("DELETE FROM User WHERE userId = '" + user_id + "'")
             conn.commit()
             cursor.close()
             return jsonify({'message: ': "User removed successfully"}), 200
-    return jsonify({'message: ': "Only spaces are entered"}), 200
+    return jsonify({'message: ': "Only spaces are entered"}), 400
 
 
 @app.route('/new', methods=['GET', 'POST'])
@@ -135,7 +131,7 @@ def new():
             cursor.execute(query)
             conn.commit()
             cursor.close()
-            return jsonify({'id:': id}), 201
+            return jsonify({'id': id}), 201
     return jsonify({'message: ': "No User Added"}), 401
 
 
@@ -147,8 +143,9 @@ def all_users():
     :return: web_page having all the users in the DB.
     """
     data = get_jwt_identity()
-    if not data['session']:
+    if not data['user']['session']:
         return jsonify({"Message": "Session expired"}), 400
+    data1 = get_raw_jwt()
     cursor = mysql.connect().cursor()
     cursor.execute("SELECT * from User")
     data = cursor.fetchall()
@@ -170,6 +167,7 @@ def login():
     data = request.json
     username = data['username']
     password = data['password']
+
     cursor = mysql.connect().cursor()
     query = "SELECT * from User where Username={username} and Password={password}"
     query = query.format(username="'" + username + "'", password="'" + password + "'")
@@ -179,13 +177,20 @@ def login():
         expires = datetime.timedelta(days=365)
         user = Users(data[0], username, True, password)
 
-        access_token = create_access_token(identity=user.get_data(), expires_delta=expires)
+        # access_token = create_access_token(identity={'user': user.get_data(),'session_id': id}, expires_delta=expires)
         conn = mysql.get_db()
         cursor = conn.cursor()
-        cursor.execute("UPDATE User SET user_session =%s" % 1 +
-                       " WHERE userId = %d;" % data[0])
+        cursor.execute("SELECT * from session")
+        response = cursor.fetchall()
+        id = response[-1][0] + 1
+        access_token = create_access_token(identity={'user': user.get_data(), 'session_id': id}, expires_delta=expires)
+        query = "INSERT INTO Session VALUES ( {id}, {userId}, {user_jti}, {token}, {is_active} )"
+        query = query.format(id=str(id), userId="'" + str(user.id) + "'", user_jti="'" + "123" + "'",
+                             token="'" + access_token + "'", is_active=1)
+        cursor.execute(query)
         conn.commit()
         cursor.close()
+        # data1 = get_raw_jwt()
         return jsonify({'access_token': access_token, 'status': 'User logged in'})
     else:
         cursor.close()
