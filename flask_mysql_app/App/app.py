@@ -6,8 +6,8 @@ Database connectivity is also handled in the same file.
 Authenticates the user using the base of extended_jwt library
 """
 from flask import Flask, request, flash, jsonify
-from flask_jwt_extended import create_access_token, JWTManager, \
-    get_jwt_identity, jwt_required
+from flask_jwt_extended import create_access_token, JWTManager, get_jwt_identity, jwt_required ,\
+    current_user,get_current_user
 from flaskext.mysql import MySQL
 from flask_mysql_app.users_data.Users import Users
 
@@ -30,9 +30,6 @@ jwt = JWTManager(app)
 @jwt.user_loader_callback_loader
 def user_loader_callback(identity):
     data = get_jwt_identity()
-
-    if not data['session']:
-        return jsonify({"msg": "Session Expired"})
     conn = mysql.get_db()
     cursor = conn.cursor()
     user_id = data['id']
