@@ -19,17 +19,25 @@ Type following commands:
 	- mysql> CREATE TABLE User(
  		userId INT NOT NULL AUTO_INCREMENT,
  		userName VARCHAR(100) NOT NULL,
- 		password VARCHAR(40) NOT NULL,
-		token VARCHAR(300) NOT NULL,
+ 		email VARCHAR(25) NOT NULL,
+		UNIQUE KEY(userName, email),
  		PRIMARY KEY(userId)
  		);
+	- mysql> CREATE TABLE Session (
+		sessionId INT NOT NULL AUTO_INCREMENT,
+		userId INT NOT NULL,
+		device VARCHAR(20) NOT NULL,
+		token INT VARCHAR(400) NOT NULL,
+		is_active INT NOT NULL,
+		PRIMAR KEY(sessionId));
 
 4. Selecting the database
 	- Use EmpData;
 
 
 5. Inserting row into the database
-	- Insert into User values(1,’saqib’,’123’,’121212’);
+	- Insert into User values(1,’saqib’,’123’,’test1@gmail.com’);
+	- Insert into Session values(1,’saqib’,’mobile’,’121212’,0);
 
 
 6. Checking the data base table values
@@ -48,8 +56,8 @@ Login:
 
 Hit: 	http://localhost:5000/login
 	with credentials username and password as from data
-	use username ‘saqib’ and password as ‘123’
-
+	use username ‘saqib’ and password as ‘123’ and email ‘test1@gmail.com’
+	as application/json form data
 Response: Will return token and Login status
 
 All Users:
@@ -63,7 +71,7 @@ Add New User:
 
 Hit: 	http://localhost:5000/new
 	with Authorization token in header
-	with username and password values as from data
+	with username and password and email values as application/json form data
 
 Response: Will return the user id
 
@@ -71,16 +79,16 @@ Remove user:
 
 Hit: 	http://localhost:5000/remove
 	with Authorization token in header
-	with username as from data
+	with id as application/json data
 
 Response: Will return the status of user
 
-Expire token:
+Logout User:
 
-Hit: 	http://localhost:5000/expire
+Hit: 	http://localhost:5000/logout
 	with Authorization token in header
 
-Response: Logouts the User
+Response: Logouts the User and expires the session
 
 
 
