@@ -66,7 +66,6 @@ def logout():
     data = get_jwt_identity()
     if not data['user']['session']:
         return jsonify({"Message": "Session expired"}), 400
-    data = get_jwt_identity()
     get_jwt_identity()['user']['session'] = False
     user_id = data['user']['id']
     session_id = data['session_id']
@@ -79,6 +78,65 @@ def logout():
     conn.commit()
     cursor.close()
     return jsonify({"msg": "Successfully logged out"}), 200
+
+
+@app.route('/change-password', methods=['POST'])
+@jwt_required
+def change_password():
+    """
+    Logout the user and expired the session and update the session in DB
+    :return: response msg to user
+    """
+    user_data = get_jwt_identity()
+    if not user_data['user']['session']:
+        return jsonify({"Message": "Session expired"}), 400
+    data = request.json
+    old_password = data['old_password']
+    new_password = data['new_password']
+    user_id = user_data['user']['id']
+    old_password = old_password.strip()
+    new_password = new_password.strip()
+    if old_password and new_password:
+        conn = mysql.get_db()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM User WHERE userId='%d" % user_id + "' and password='%s" % old_password + "'")
+        data = cursor.fetchone()
+        if data is None:
+            cursor.close()
+            return jsonify({'message: ': "Old password is not correct"}), 400
+        else:
+            cursor.execute("UPDATE User SET password='%s" % new_password + "' WHERE userId ='%d" % user_id + "'")
+            conn.commit()
+            cursor.execute(
+                "UPDATE session SET is_active=%s" % 0 + ", token='%s" % 0 + "' WHERE userId ='%d" % user_id + "'")
+            conn.commit()
+            cursor.close()
+            return jsonify({'msg': "Password updated successfully"}), 200
+    return jsonify({'message: ': "Only spaces are entered"}), 400
+
+
+@app.route('/revoke', methods=['DELETE'])
+@jwt_required
+def revoke():
+    """
+
+    """
+    data = get_jwt_identity()
+    if not data['user']['session']:
+        return jsonify({"Message": "Session expired"}), 400
+    data = get_jwt_identity()
+    get_jwt_identity()['user']['session'] = False
+    user_id = data['user']['id']
+    session_id = data['session_id']
+    device = data['device']
+    conn = mysql.get_db()
+    cursor = conn.cursor()
+
+    cursor.execute("UPDATE session SET is_active=%s" % 0 + ", token='%s" % 0 + "' WHERE userId = '%d" % user_id +
+                   "' AND sessionId='%d" % session_id + "' AND device='%s" % device + "'")
+    conn.commit()
+    cursor.close()
+    return jsonify({"msg": "Token has been revoked"}), 200
 
 
 @app.route("/remove", methods=['DELETE'])
@@ -94,8 +152,8 @@ def remove():
         return jsonify({"Message": "Session expired"}), 400
     data = request.json
     user_id = data['id']
-    username = user_id.strip()
-    if username:
+    user_id = user_id.strip()
+    if user_id:
         conn = mysql.get_db()
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM User WHERE userId='" + user_id + "'")
@@ -181,17 +239,18 @@ def login():
     :return: token and login status
     """
     data = request.json
-    username = data['username']
+    username_or_email = data['username_or_email']
     password = data['password']
 
     cursor = mysql.connect().cursor()
-    query = "SELECT * from User where Username={username} and Password={password}"
-    query = query.format(username="'" + username + "'", password="'" + password + "'")
+    query = "SELECT * from User WHERE  (email={username_or_email} " \
+            "OR Username={username_or_email}) AND Password={password} "
+    query = query.format(username_or_email="'" + username_or_email + "'", password="'" + password + "'")
     cursor.execute(query=query)
     data = cursor.fetchone()
     if data is not None:
         expires = datetime.timedelta(days=365)
-        user = Users(data[0], username, True, password)
+        user = Users(data[0], username_or_email + "'", True, password)
         conn = mysql.get_db()
         cursor = conn.cursor()
         device = "mobile"

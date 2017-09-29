@@ -56,7 +56,7 @@ Login:
 
 Hit: 	http://localhost:5000/login
 	with credentials username and password as from data
-	use username ‘saqib’ and password as ‘123’ and email ‘test1@gmail.com’
+	use username_or_password ‘saqib’ and password as ‘123’ and email ‘test1@gmail.com’
 	as application/json form data
 Response: Will return token and Login status
 
@@ -89,6 +89,20 @@ Hit: 	http://localhost:5000/logout
 	with Authorization token in header
 
 Response: Logouts the User and expires the session
+
+
+Hit: 	http://localhost:5000/change_password
+	with Authorization token in header
+	with old_password and new_passwors as application/json data
+
+Response: Will return the status of password accordingly and removes all the sessions 	of that because of change of password.
+
+Logout User:
+
+Hit: 	http://localhost:5000/revoke
+	with Authorization token in header
+
+Response: revokes the token and removes session and token from db.
 
 
 
