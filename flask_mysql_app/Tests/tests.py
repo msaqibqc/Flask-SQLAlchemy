@@ -5,18 +5,31 @@ Tests includes the login , inserting users, getting user and token bases authent
 
 import pytest
 import requests
-from requests import codes
-
-from flask_mysql_app.App import app
-from flask_mysql_app.users_data.user_creation import CreateUser
 import json
 
-url = ""
-class TestingAuthentication():
+from requests import codes
+from faker import Faker
 
+
+fake = Faker()
+
+
+class TestingAuthentication():
+    """
+    Class tests all the end points for the user login endpoints which includes followings
+    - Login user and setting session
+    - Getting all the users
+    - Adding new user
+    - Deleting a new user based on user_id
+    - Logging out user and expiring the session
+    """
     def test_token_authentication(self):
         """
-        Checking authentication without token
+        Checking authentication with different scenarios.
+        - Having auth token
+        - Without auth token
+        - With expired session
+        - With valid token
         :return:
         """
         response = requests.get('http://localhost:5000/index')
@@ -40,15 +53,14 @@ class TestingAuthentication():
         response = requests.get('http://localhost:5000/index', headers=header)
         assert response.status_code == 400
 
-
     def test_user_login(self):
         """
-        Checking login scenarios
+        Checking login scenarios with valid credentials and invalid credentials  and then logging out user
         :return:
         """
         # login with wrong credentials
         headers = {'content-type': 'application/json', 'Authorization': ''}
-        data = {"username": "23", "password": "213"}
+        data = {"username": "username", "password": "password"}
         response = requests.post('http://localhost:5000/login', data=json.dumps(data), headers=headers)
         assert response.status_code == 401
         assert "Credentials are not correct" in response.text
@@ -66,10 +78,9 @@ class TestingAuthentication():
         assert response.status_code == 200
 
     @pytest.mark.saqib
-    def test_adding_new_user(self):
+    def test_adding_new_user_and_deleting(self):
         """
-
-        :return:
+        Test includes scenario to add new user and then deletes that added user
         """
         headers = {'Content-Type': 'application/json', 'Authorization': ''}
 
@@ -79,22 +90,28 @@ class TestingAuthentication():
         data = json.loads(response.text)
         headers['Authorization'] = 'Bearer %s' % data['access_token']
 
-        data = {"username": "Test_khochi", "password": "khocha123"}
+        # Getting fake information
+        username = fake.name()
+        password = fake.password()
+
+        data = {"username": username, "password": password}
         response = requests.post('http://localhost:5000/new', data=json.dumps(data), headers=headers)
         assert response.status_code == 201
         resp = json.loads(response.text)
-        user_id = str(resp['id'])
+        user_id = str(resp['id'])  # id of newly added user
         data = {'id': user_id}
+
+        # deleting newly added user
         response = requests.delete('http://localhost:5000/remove', data=json.dumps(data), headers=headers)
         assert response.status_code == 200
 
+        # logging out the user
         response = requests.delete('http://localhost:5000/logout', data=json.dumps(user_data), headers=headers)
         assert response.status_code == 200
 
     def test_getting_all_the_users(self):
         """
-
-        :return:
+        Test to get all the users with valid auth token and the checking the status code
         """
 
         headers = {'Content-Type': 'application/json'}
@@ -110,9 +127,3 @@ class TestingAuthentication():
 
         response = requests.delete('http://localhost:5000/logout',data=json.dumps(data), headers=token)
         assert response.status_code == 200
-
-
-
-
-
-
