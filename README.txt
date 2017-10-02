@@ -106,6 +106,15 @@ Hit: 	http://localhost:5000/revoke
 
 Response: revokes the token and removes session and token from db.
 
+Expire All Tokens:
+
+Hit: 	http://localhost:5000/expire-all-tokens
+	with Authorization token in header
+
+Response: It will expire all the tokens. 
+
+
+
 
 
 

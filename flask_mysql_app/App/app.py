@@ -15,7 +15,6 @@ from flask_jwt_extended import create_access_token, JWTManager, get_jwt_identity
 from flask_mysql_app.users_data.Users import Users
 from flask_mysql_app.settings import mysql, app
 
-
 mysql.init_app(app)
 jwt = JWTManager(app)
 
@@ -137,6 +136,25 @@ def revoke():
     conn.commit()
     cursor.close()
     return jsonify({"msg": "Token has been revoked"}), 200
+
+
+@app.route('/expire-all-tokens', methods=['DELETE'])
+@jwt_required
+def expire_all_tokens():
+    """
+    Endpoint which expires all the tokens of all logged in users
+    :return:
+    """
+    data = get_jwt_identity()
+    if not data['user']['session']:
+        return jsonify({"Message": "Session expired"}), 400
+
+    conn = mysql.get_db()
+    cursor = conn.cursor()
+    cursor.execute("UPDATE session SET is_active ='%d" % 0 + "', token='%s" % 0 + "'")
+    conn.commit()
+    cursor.close()
+    return jsonify({'msg': 'All tokens expired'})
 
 
 @app.route("/remove", methods=['DELETE'])
@@ -271,7 +289,7 @@ def login():
             return jsonify({'access_token': access_token, 'status': 'User logged in'})
         else:
             id = response[0][0]
-            access_token = create_access_token(identity={'user': user.get_data(), 'session_id': id,'device': device},
+            access_token = create_access_token(identity={'user': user.get_data(), 'session_id': id, 'device': device},
                                                expires_delta=expires)
 
             cursor.execute("UPDATE session SET is_active ='%d" % 1 + "', token='%s" % access_token +
