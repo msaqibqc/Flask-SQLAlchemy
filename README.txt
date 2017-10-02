@@ -91,13 +91,15 @@ Hit: 	http://localhost:5000/logout
 Response: Logouts the User and expires the session
 
 
+Change Password:
+
 Hit: 	http://localhost:5000/change_password
 	with Authorization token in header
 	with old_password and new_passwors as application/json data
 
 Response: Will return the status of password accordingly and removes all the sessions 	of that because of change of password.
 
-Logout User:
+Revoke Auth Token:
 
 Hit: 	http://localhost:5000/revoke
 	with Authorization token in header
