@@ -56,9 +56,11 @@ Login:
 
 Hit: 	POST http://localhost:5000/login
 	with credentials username and password as from data
-	use username_or_password ‘saqib’ and password as ‘123’ and email ‘test1@gmail.com’
+	use username_or_password ‘saqib’ and password as ‘123’ and email 	‘test1@gmail.com’
 	as application/json form data
+
 Response: Will return token and Login status
+
 
 All Users:
 
@@ -77,7 +79,7 @@ Response: Will return the user id
 
 Remove user:
 
-Hit: 	DELETE http://localhost:5000/remove
+Hit: 	DELETE http://localhost:5000/user
 	with Authorization token in header
 	with id as application/json data
 
