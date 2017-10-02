@@ -54,7 +54,7 @@ API Documentation
 
 Login:
 
-Hit: 	http://localhost:5000/login
+Hit: 	POST http://localhost:5000/login
 	with credentials username and password as from data
 	use username_or_password ‘saqib’ and password as ‘123’ and email ‘test1@gmail.com’
 	as application/json form data
@@ -62,14 +62,14 @@ Response: Will return token and Login status
 
 All Users:
 
-Hit: 	http://localhost:5000/AllUsers
+Hit: 	GET http://localhost:5000/user
 	with Authorization token in headers
 
 Response: Will return all the users available in the datebase
 
 Add New User:
 
-Hit: 	http://localhost:5000/new
+Hit: 	POST http://localhost:5000/user
 	with Authorization token in header
 	with username and password and email values as application/json form data
 
@@ -77,7 +77,7 @@ Response: Will return the user id
 
 Remove user:
 
-Hit: 	http://localhost:5000/remove
+Hit: 	DELETE http://localhost:5000/remove
 	with Authorization token in header
 	with id as application/json data
 
@@ -85,7 +85,7 @@ Response: Will return the status of user
 
 Logout User:
 
-Hit: 	http://localhost:5000/logout
+Hit: 	DELETE http://localhost:5000/logout
 	with Authorization token in header
 
 Response: Logouts the User and expires the session
@@ -93,7 +93,7 @@ Response: Logouts the User and expires the session
 
 Change Password:
 
-Hit: 	http://localhost:5000/change_password
+Hit: 	PUT http://localhost:5000/user/update-password
 	with Authorization token in header
 	with old_password and new_passwors as application/json data
 
@@ -101,14 +101,14 @@ Response: Will return the status of password accordingly and removes all the ses
 
 Revoke Auth Token:
 
-Hit: 	http://localhost:5000/revoke
+Hit: 	POST http://localhost:5000/token
 	with Authorization token in header
 
 Response: revokes the token and removes session and token from db.
 
 Expire All Tokens:
 
-Hit: 	http://localhost:5000/expire-all-tokens
+Hit: 	DELETE http://localhost:5000/token/expire-all-tokens
 	with Authorization token in header
 
 Response: It will expire all the tokens. 
