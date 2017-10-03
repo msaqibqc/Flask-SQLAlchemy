@@ -106,14 +106,14 @@ class TestingAuthentication():
         email = str(num) + "@yahoo.com"
 
         data = {"username": username, "password": password , 'email': email}
-        response = requests.post('http://localhost:5000/new', data=json.dumps(data), headers=headers)
+        response = requests.post('http://localhost:5000/user', data=json.dumps(data), headers=headers)
         assert response.status_code == 201
         resp = json.loads(response.text)
         user_id = str(resp['id'])  # id of newly added user
         data = {'id': user_id}
 
         # deleting newly added user
-        response = requests.delete('http://localhost:5000/remove', data=json.dumps(data), headers=headers)
+        response = requests.delete('http://localhost:5000/user', data=json.dumps(data), headers=headers)
         assert response.status_code == 200
 
         # logging out the user
@@ -135,7 +135,7 @@ class TestingAuthentication():
         token = {'Authorization': "Bearer " + data['access_token']}
 
         # Getting all the users
-        response = requests.get('http://localhost:5000/AllUsers', headers=token)
+        response = requests.get('http://localhost:5000/user', headers=token)
         assert response.status_code == 200
 
         # logging out the user
@@ -154,13 +154,13 @@ class TestingAuthentication():
         data = json.loads(response.text)
         headers['Authorization'] = 'Bearer %s' % data['access_token']
 
-        response = requests.delete('http://localhost:5000/revoke', data=json.dumps(data), headers=headers)
+        response = requests.post('http://localhost:5000/token', data=json.dumps(data), headers=headers)
         data = json.loads(response.text)
         assert response.status_code == 200
         assert data['msg'] == "Token has been revoked"
 
         # revoking the token and testing the status code
-        response = requests.delete('http://localhost:5000/revoke', data=json.dumps(data), headers=headers)
+        response = requests.post('http://localhost:5000/token', data=json.dumps(data), headers=headers)
         assert response.status_code == 400
 
     @pytest.mark.saqib
@@ -183,13 +183,13 @@ class TestingAuthentication():
         data = {"old_password": old_password, "new_password": new_password}
 
         # Changing the password with given data
-        response = requests.post('http://localhost:5000/change-password', data=json.dumps(data), headers=headers)
+        response = requests.put('http://localhost:5000/user/update-password', data=json.dumps(data), headers=headers)
         data = json.loads(response.text)
         assert response.status_code == 200
         assert data['msg'] == "Password updated successfully"
 
         # checking the response on changing the password
-        response = requests.post('http://localhost:5000/change-password', data=json.dumps(data), headers=headers)
+        response = requests.put('http://localhost:5000/user/update-password', data=json.dumps(data), headers=headers)
         assert response.status_code == 400
 
         # logging in with new password and checking status
@@ -199,11 +199,18 @@ class TestingAuthentication():
         data = json.loads(response.text)
         headers['Authorization'] = 'Bearer %s' % data['access_token']
 
+        #  Check with wrong old password
+        data = {"old_password": old_password, "new_password": new_password}
+        response = requests.put('http://localhost:5000/user/update-password', data=json.dumps(data), headers=headers)
+        data = json.loads(response.text)
+        assert response.status_code == 400
+        assert data['msg'] == "Old password is not correct"
+
         # setting data for resetting the password
         data = {"old_password": new_password, "new_password": old_password}
 
         # Resetting the old password
-        response = requests.post('http://localhost:5000/change-password', data=json.dumps(data), headers=headers)
+        response = requests.put('http://localhost:5000/user/update-password', data=json.dumps(data), headers=headers)
         data = json.loads(response.text)
         assert response.status_code == 200
         assert data['msg'] == "Password updated successfully"

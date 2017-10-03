@@ -266,7 +266,7 @@ class User(Resource):
             data = cursor.fetchone()
             if data is None:
                 cursor.close()
-                data = {'message: ': "Old password is not correct"}
+                data = {'msg': "Old password is not correct"}
                 return self.send_response(data, 400)
             else:
                 cursor.execute("UPDATE User SET password='%s" % new_password + "' WHERE userId ='%d" % user_id + "'")
@@ -342,11 +342,13 @@ class UserLogin(Resource):
             return self.send_response(data, 401)
 
 
+# api endpoints
 api.add_resource(IndexOfUser, '/index')
-api.add_resource(Token, '/token', '/token/expire-all-tokens')
-api.add_resource(User, '/user', '/user/update-password')
-api.add_resource(UserLogin, '/login')
-api.add_resource(UserLogout, '/logout')
+api.add_resource(Token, '/token', '/token/expire-all-tokens', endpoint='token')
+api.add_resource(User, '/user', '/user/update-password', endpoint='user')
+api.add_resource(UserLogin, '/login', endpoint='login')
+api.add_resource(UserLogout, '/logout', endpoint='logout')
+
 
 if __name__ == "__main__":
     app.run()
